@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  # The Shield Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: the-shield-app
+    ports:
+      - "8080:8080"
+    environment:
+      - REDIS_ADDR=redis-server:6379
+      - LIMIT_MAX=100
+      - WINDOW_SECONDS=60
+    depends_on:
+      - redis-server
+    networks:
+      - shield-network
+
+  # Redis Infrastructure
+  redis-server:
+    image: redis:7-alpine
+    container_name: shield-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --save 60 1 --loglevel warning
+    networks:
+      - shield-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+networks:
+  shield-network:
+    driver: bridge
